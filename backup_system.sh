@@ -1,7 +1,13 @@
 #!/bin/bash
 ##########################################################
 # SAUVEGARDE SYSTEME
-# DERRE S. JACOB H. F.DIENOT
+# 
+# Authors: 
+#   Sebastien DERRE <Sebastien.Derre@banque-france.fr>
+#   Hugo JACOB <Hugo.Jacob@banque-france.fr>
+#   Frederic DIENOT <Frederic.Dienot.external@banque-france.fr>
+#   Raphael BORDET <Raphael.Bordet.external@banque-france.fr>
+#
 # MAJ : 02/03/2015
 #
 # Utilisation de FSARCHIVER
