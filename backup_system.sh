@@ -267,3 +267,5 @@ esac
 } | tee $DIRLOG/$LOGFILE
 
 clean_exit 0
+
+# vim: syntax=sh:expandtab:shiftwidth=2:softtabstop=2
