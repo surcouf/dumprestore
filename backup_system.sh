@@ -59,7 +59,10 @@ export LOGFILE
 RHEL_VERSION=$(lsb_release -sr)
 case "${RHEL_VERSION}" in
   5|6) ;;
-  *) RHEL_VERSION=UNKNOWN ;;
+  *)
+    echo "Erreur : OS non supporte !"
+    clean_exit
+  ;;
 esac
 
 # Releve de la config Hardware du serveur physique
@@ -162,9 +165,6 @@ if [[ $? -eq 1 ]]; then
         yum -q -y install fsarchiver
         FSARCHIVER=$(which fsarchiver)
     ;;
-    *)
-      echo "Erreur : OS Inconnu"
-      clean_exit ;;
   esac
 fi
 
