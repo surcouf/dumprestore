@@ -18,6 +18,37 @@
 # Pour des raisons de securite
 umask 0077
 
+print_msg() {
+  #
+  # Affiche un message selon la couleur fournie
+  # Exemple : 
+  #  print_msg -f GREEN "Message"
+  #
+  local params=$(getopt -o f: -l foreground: -- "$@")
+  local COL_STR="\e[39;0m"  # Default foreground color
+  eval set -- "${params}"
+  while true; do
+    case "$1" in
+      -f|--foreground)
+        case "$2" in
+          RED)      COL_STR="\e[31;1m"  ;;
+          GREEN)    COL_STR="\e[32;1m"  ;;
+          YELLOW)   COL_STR="\e[33;1m"  ;;
+          BLUE)     COL_STR="\e[34;1m"  ;;
+          MAGENTA)  COL_STR="\e[35;1m"  ;;
+          CYAN)     COL_STR="\e[36;1m"  ;;
+          BLACK)    COL_STR="\e[40;1m"  ;;
+        esac
+        shift 2 ;;
+      --) shift; break;;
+    esac
+  done
+
+  local COL_RESET="\e[39;49;0m"
+
+  printf '%b%s%b\n' "${COL_STR}" "$@" "${COL_RESET}"
+}
+
 # Pour sortir proprement
 clean_exit() {
   RETURN=${1:-3}
