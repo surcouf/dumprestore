@@ -49,6 +49,14 @@ print_msg() {
   printf '%b%s%b' "${COL_STR}" "$@" "${COL_RESET}"
 }
 
+inform() {
+  print_msg --newline --foreground GREEN "$@"
+}
+
+warning() {
+  print_msg --newline --foreground YELLOW "$@"
+}
+
 # Pour sortir proprement
 clean_exit() {
   RETURN=${1:-3}
