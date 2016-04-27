@@ -24,11 +24,13 @@ print_msg() {
   # Exemple : 
   #  print_msg -f GREEN "Message"
   #
-  local params=$(getopt -o f: -l foreground: -- "$@")
   local COL_STR="\e[39;0m"  # Default foreground color
+  local COL_RESET="\e[39;49;0m"
+  local params=$(getopt -o nf: -l newline,foreground: -- "$@")
   eval set -- "${params}"
   while true; do
     case "$1" in
+      -n|--newline) COL_RESET="${COL_RESET}\n"; shift ;;
       -f|--foreground)
         case "$2" in
           BLACK)    COL_STR="\e[30;1m"  ;;
@@ -44,9 +46,7 @@ print_msg() {
     esac
   done
 
-  local COL_RESET="\e[39;49;0m"
-
-  printf '%b%s%b\n' "${COL_STR}" "$@" "${COL_RESET}"
+  printf '%b%s%b' "${COL_STR}" "$@" "${COL_RESET}"
 }
 
 # Pour sortir proprement
