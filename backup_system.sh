@@ -36,12 +36,12 @@ if [ $EUID -ne 0 ]
   exit 1
 fi
 
-HOST=$(hostname | sed 's/\..*$//')
-case $HOST in
-  lxdv*|lxre*) NFS=development;;
-  lxin*)       NFS=integration;;
-  lxpr*|lxho*) NFS=production;;
-  *)           NFS=test;;
+HOST=$(hostname -s)
+case ${HOST:2:2} in
+  dv|re) NFS=development;;
+  in)    NFS=integration;;
+  pr|ho) NFS=production;;
+  *)     NFS=test;;
 esac
 
 DATE=$(date +%Y_%m_%d-%H:%M)
