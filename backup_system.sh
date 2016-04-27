@@ -92,8 +92,8 @@ echo -e "\033[40;1;32m=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ===\03
 if lvscan | grep snap | egrep 'slash|usr|opt|var|seos|home'
   then
   case $RHEL_VERSION in
-    el5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/{slash,usr,opt,var,seos,home}*snap ;;
-    el6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)-{slash,usr,opt,var,seos,home}*snap ;;
+    5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/{slash,usr,opt,var,seos,home}*snap ;;
+    6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)-{slash,usr,opt,var,seos,home}*snap ;;
     *)
       echo "Erreur : OS Inconnu"
       clean_exit ;;
@@ -105,8 +105,8 @@ fi
 echo -e "\033[40;1;32m=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ===\033[0m"
 lvscan | grep -q backupLV || echo "backupLV n'existe pas"
 case $RHEL_VERSION in
-  el5) lvscan | grep -q backupLV && lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/backupLV ;;
-  el6) lvscan | grep -q backupLV && lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)/backupLV ;;
+  5) lvscan | grep -q backupLV && lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/backupLV ;;
+  6) lvscan | grep -q backupLV && lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)/backupLV ;;
   *)
     echo "Erreur : OS Inconnu"
     clean_exit ;;
@@ -150,7 +150,7 @@ if [ `df -Pk /mnt/nfsbackup | tail -1 | awk '{print $4}'` -lt "10485760" ]
 fi
 
 case $RHEL_VERSION in
-  el5)
+  5)
     if [ ! -s /usr/local/sbin/fsarchiver ] && [ ! -s /usr/sbin/fsarchiver ]
       then
       echo "=> fsarchiver introuvable, recuperation du binaire"
@@ -159,7 +159,7 @@ case $RHEL_VERSION in
     else
       echo "=> fsarchiver est present"
     fi ;;
-  el6)
+  6)
     if [ ! -s /usr/sbin/fsarchiver ]
       then
       yum -y install fsarchiver-0.6.15-1.el6.x86_64.rpm
@@ -172,8 +172,8 @@ esac
 cd /mnt/nfsbackup/$HOST
 
 case $RHEL_VERSION in
-  el5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
-  el6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
+  5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
+  6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
   *)
     echo "Erreur : OS Inconnu"
     clean_exit ;;
@@ -258,8 +258,8 @@ echo "=> Fin ${DATE}"
 echo -e "\033[40;1;32m=== CREATION DE backupLV POUR RESERVATION DES 6G NECESSAIRES AUX SNAPSHOTS ===\033[0m"
 
 case $RHEL_VERSION in
-  el5) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d/ -f3) ;;
-  el6) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d- -f1) ;;
+  5) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d/ -f3) ;;
+  6) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d- -f1) ;;
   *)
     echo "Erreur : OS Inconnu"
     clean_exit ;;
