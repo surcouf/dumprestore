@@ -55,17 +55,12 @@ DIRLOG=/var/log
 export DIRLOG
 LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
 export LOGFILE
-IS_RHEL_5=$(cat /etc/redhat-release | { grep -c 'release 5' ||true; })
-IS_RHEL_6=$(cat /etc/redhat-release | { grep -c 'release 6' ||true; })
-if [ $IS_RHEL_5 = 1 ]
-  then
-  RHEL_VERSION=el5
-elif [ $IS_RHEL_6 = 1 ]
-  then
-  RHEL_VERSION=el6
-else
-  RHEL_VERSION=UNKNOWN
-fi
+
+RHEL_VERSION=$(lsb_release -sr)
+case "${RHEL_VERSION}" in
+  5|6) ;;
+  *) RHEL_VERSION=UNKNOWN ;;
+esac
 
 # Releve de la config Hardware du serveur physique
 if [ -x /root/hardware.sh -a -x /sbin/hpasmcli -a -x /sbin/hplog -a -x /opt/compaq/hpacucli/bld/hpacucli ]
