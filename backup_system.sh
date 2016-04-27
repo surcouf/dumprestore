@@ -31,13 +31,13 @@ print_msg() {
     case "$1" in
       -f|--foreground)
         case "$2" in
+          BLACK)    COL_STR="\e[30;1m"  ;;
           RED)      COL_STR="\e[31;1m"  ;;
           GREEN)    COL_STR="\e[32;1m"  ;;
           YELLOW)   COL_STR="\e[33;1m"  ;;
           BLUE)     COL_STR="\e[34;1m"  ;;
           MAGENTA)  COL_STR="\e[35;1m"  ;;
           CYAN)     COL_STR="\e[36;1m"  ;;
-          BLACK)    COL_STR="\e[40;1m"  ;;
         esac
         shift 2 ;;
       --) shift; break;;
