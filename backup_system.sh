@@ -149,25 +149,24 @@ if [ `df -Pk /mnt/nfsbackup | tail -1 | awk '{print $4}'` -lt "10485760" ]
   clean_exit
 fi
 
-case $RHEL_VERSION in
-  5)
-    if [ ! -s /usr/local/sbin/fsarchiver ] && [ ! -s /usr/sbin/fsarchiver ]
-      then
-      echo "=> fsarchiver introuvable, recuperation du binaire"
-      cp /mnt/nfsbackup/fsarchiver-el5/fsarchiver /usr/local/sbin/
-      chmod +x /usr/local/sbin/fsarchiver
-    else
-      echo "=> fsarchiver est present"
-    fi ;;
-  6)
-    if [ ! -s /usr/sbin/fsarchiver ]
-      then
-      yum -y install fsarchiver-0.6.15-1.el6.x86_64.rpm
-    fi ;;
-  *)
-    echo "Erreur : OS Inconnu"
-    clean_exit ;;
-esac
+FSARCHIVER=$(which fsarchiver)
+if [[ $? -eq 1 ]]; then
+  case $RHEL_VERSION in
+    5)
+        echo "=> fsarchiver introuvable, recuperation du binaire"
+        cp /mnt/nfsbackup/fsarchiver-el5/fsarchiver /usr/local/sbin/
+        FSARCHIVER="/usr/local/sbin/fsarchiver"
+        chmod ug+x ${FSARCHIVER}
+    ;;
+    6)
+        yum -q -y install fsarchiver
+        FSARCHIVER=$(which fsarchiver)
+    ;;
+    *)
+      echo "Erreur : OS Inconnu"
+      clean_exit ;;
+  esac
+fi
 
 cd /mnt/nfsbackup/$HOST
 
