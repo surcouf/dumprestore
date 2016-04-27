@@ -55,7 +55,7 @@ clean_exit() {
   find /var/log -name "backup_*.out" -mtime +90 -exec rm {} \;
   chown ftpperf:ftpusers /var/log/backup*out
   chmod 644 /var/log/backup*out
-  cp /var/log/backup*out /mnt/nfsbackup/${HOST} 2>/dev/null
+  cp /var/log/backup*out ${NFS_DESTDIR} 2>/dev/null
   echo -e "\033[40;1;32m=== DEMONTAGE DU PARTAGE NFS ===\033[0m\n"
   umount -f /mnt/nfsbackup 2>/dev/null
   exit ${RETURN}
@@ -85,6 +85,9 @@ DIRLOG=/var/log
 export DIRLOG
 LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
 export LOGFILE
+
+NFS_DESTDIR="/mnt/nfsbackup/${HOST}"
+export NFS_DESTDIR
 
 RHEL_VERSION=$(lsb_release -sr)
 case "${RHEL_VERSION}" in
@@ -167,11 +170,11 @@ fi
     fi
   fi
 
-  if [[ -d "/mnt/nfsbackup/${HOST}" ]]; then
-    echo "=> Le repertoire /mnt/nfsbackup/${HOST} existe"
+  if [[ -d "${NFS_DESTDIR}" ]]; then
+    echo "=> Le repertoire ${NFS_DESTDIR} existe"
   else
     echo "=> Creation du repertoire qui va accueillir la sauvegarde du serveur"
-    mkdir /mnt/nfsbackup/${HOST}
+    mkdir ${NFS_DESTDIR}
   fi
 
   NFS_FREE=$(df -Pk /mnt/nfsbackup | tail -1 | awk '{print $4}')
@@ -196,7 +199,7 @@ fi
     esac
   fi
 
-  cd /mnt/nfsbackup/${HOST}
+  cd ${NFS_DESTDIR}
 
   case ${RHEL_VERSION} in
     5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
@@ -209,7 +212,7 @@ fi
   IFS=$'\n'
   sync
 
-  echo -e "\033[40;1;32m=> Sauvegarde de la partition /boot sous isis:/mnt/nfsbackup/${HOST}/boot.fsa\033[0m"
+  echo -e "\033[40;1;32m=> Sauvegarde de la partition /boot sous isis:${NFS_DESTDIR}/boot.fsa\033[0m"
   mount | grep -q boot
   if [[ $? -eq 0 ]]; then
     echo "Pas de partition /boot separe"
@@ -240,7 +243,7 @@ fi
 
   echo -e "\033[40;1;32m=== SAUVEGARDE DES SNAPSHOTS ===\033[0m\n"
   for lv in $(cat lvm.out); do
-    echo -e "\033[40;1;32m=> ${lv} sauvegarde sous isis:/mnt/nfsbackup/${HOST}/`echo ${lv} | cut -d/ -f 4`.fsa \033[0m"
+    echo -e "\033[40;1;32m=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa \033[0m"
     /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} `echo ${lv} | cut -d/ -f 4`.fsa `echo ${lv}`snap
     if [[ $? -ne 0 ]]; then
       echo "Erreur : fsarchiver "`echo ${lv}`snap
@@ -257,10 +260,10 @@ fi
 
   if [ ! -s ks-${HOST}.cfg -a -s /root/*ks.cfg ]; then
     echo "=> Recuperation du kickstart "
-    cp /root/anaconda-ks.cfg /mnt/nfsbackup/${HOST}/ks-${HOST}.cfg
+    cp /root/anaconda-ks.cfg ${NFS_DESTDIR}/ks-${HOST}.cfg
   elif [ ! -s ks-${HOST}.cfg -a -s /root/log_install/*ks.cfg ]; then
     echo "=> Recuperation du kickstart "
-    cp /root/log_install/anaconda-ks.cfg /mnt/nfsbackup/${HOST}/ks-${HOST}.cfg
+    cp /root/log_install/anaconda-ks.cfg ${NFS_DESTDIR}/ks-${HOST}.cfg
   else
     echo "=> Fichier kickstart deja recupere lors d'une precedente sauvegarde"
   fi
@@ -268,13 +271,13 @@ fi
   echo -e "\033[40;1;32m=== SAUVEGARDE DU MBR ET DE LA TABLE DES PARTITIONS ===\033[0m\n"
   BOOT_PART=$(cat /proc/partitions |awk '{print $4}' |grep -v "name"|grep -v "loop0" | grep -v '^$' | sed -n 1p)
   echo ${BOOT_PART}
-  dd if=/dev/${BOOT_PART} of=/mnt/nfsbackup/${HOST}/${HOST}.mbr.backup bs=512 count=1
-  sfdisk -d /dev/${BOOT_PART} > /mnt/nfsbackup/${HOST}/${HOST}.partitions-table.backup
+  dd if=/dev/${BOOT_PART} of=${NFS_DESTDIR}/${HOST}.mbr.backup bs=512 count=1
+  sfdisk -d /dev/${BOOT_PART} > ${NFS_DESTDIR}/${HOST}.partitions-table.backup
 
   cd /
-  SIZE=$(du -sh /mnt/nfsbackup/${HOST} | cut -f 1)
+  SIZE=$(du -sh ${NFS_DESTDIR} | cut -f 1)
   echo -e "\033[40;1;32m=== TAILLE DE LA SAUVEGARDE = $SIZE \033[0m"
-  ls -lh /mnt/nfsbackup/${HOST}/*
+  ls -lh ${NFS_DESTDIR}/*
 
   END=$(date +%s)
   DIFF=$(( ${END} - ${START} ))
