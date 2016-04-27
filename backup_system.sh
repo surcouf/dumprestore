@@ -209,7 +209,6 @@ fi
       clean_exit ;;
   esac
 
-  IFS=$'\n'
   sync
 
   echo -e "\033[40;1;32m=> Sauvegarde de la partition /boot sous isis:${NFS_DESTDIR}/boot.fsa\033[0m"
