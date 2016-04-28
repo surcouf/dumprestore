@@ -49,6 +49,10 @@ print_msg() {
   printf '%b%s%b' "${COL_STR}" "$@" "${COL_RESET}"
 }
 
+notice() {
+  print_msg --newline "$@"
+}
+
 inform() {
   print_msg --newline --foreground GREEN "$@"
 }
