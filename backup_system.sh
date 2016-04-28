@@ -73,7 +73,7 @@ clean_exit() {
   chmod 644 /var/log/backup*out
   cp /var/log/backup*out ${DESTDIR} 2>/dev/null
   inform "== DEMONTAGE DU PARTAGE NFS ==="; echo
-  umount -f /mnt/nfsbackup 2>/dev/null
+  umount -f ${NFS_DIR} 2>/dev/null
   exit ${RETURN}
 }
 
@@ -102,8 +102,9 @@ export DIRLOG
 LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
 export LOGFILE
 
-DESTDIR="/mnt/nfsbackup/${HOST}"
-export DESTDIR
+NFS_DIR="/mnt/nfsbackup"
+DESTDIR="${NFS_DIR}/${HOST}"
+export NFS_DIR DESTDIR
 
 RHEL_VERSION=$(lsb_release -sr)
 case "${RHEL_VERSION}" in
@@ -167,11 +168,11 @@ fi
 
   inform "=== MONTAGE DU PARTAGE NFS POUR DEPOT DE LA SAUVEGARDE ==="
 
-  if [[ -d "/mnt/nfsbackup" ]]; then
-    echo "=> Le repertoire /mnt/nfsbackup existe "
+  if [[ -d "${NFS_DIR}" ]]; then
+    echo "=> Le repertoire ${NFS_DIR} existe "
   else
-    echo "=> Creation du repertoire /mnt/nfsbackup"
-    mkdir -p /mnt/nfsbackup
+    echo "=> Creation du repertoire ${NFS_DIR}"
+    mkdir -p ${NFS_DIR}
   fi
 
   grep -q "nfsbackup nfs" /etc/mtab
@@ -179,7 +180,7 @@ fi
     echo "=> Partage NFS deja monte"
   else
     echo "=> Montage du partage NFS"
-    mount -t nfs4 r-isis.unix.intra.bdf.local:/home/svsys/appli/bdf/nfsbackup /mnt/nfsbackup
+    mount -t nfs4 r-isis.unix.intra.bdf.local:/home/svsys/appli/bdf/nfsbackup ${NFS_DIR}
     if [[ $? -ne 0 ]]; then
       echo "Erreur : Montage NFS"
       clean_exit
@@ -193,7 +194,7 @@ fi
     mkdir ${DESTDIR}
   fi
 
-  NFS_FREE=$(df -Pk /mnt/nfsbackup | tail -1 | awk '{print $4}')
+  NFS_FREE=$(df -Pk ${NFS_DIR} | tail -1 | awk '{print $4}')
   if [[ ${NFS_FREE} -lt 10485760 ]]; then
     echo "Erreur : Place libre insuffisante sur le partage NFS"
     clean_exit
@@ -204,7 +205,7 @@ fi
     case ${RHEL_VERSION} in
       5)
           echo "=> fsarchiver introuvable, recuperation du binaire"
-          cp /mnt/nfsbackup/fsarchiver-el5/fsarchiver /usr/local/sbin/
+          cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
           FSARCHIVER="/usr/local/sbin/fsarchiver"
           chmod ug+x ${FSARCHIVER}
       ;;
