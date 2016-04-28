@@ -61,6 +61,10 @@ warning() {
   print_msg --newline --foreground YELLOW "$@"
 }
 
+error() {
+  print_msg --newline --foreground RED "$@" >&2
+}
+
 # Pour sortir proprement
 clean_exit() {
   RETURN=${1:-3}
