@@ -236,10 +236,10 @@ fi
     grep -q "boot ext2" /etc/mtab
     if [[ $? -eq 0 ]]; then
       echo "=> filesystem EXT2 pour boot, ajout argument -a"
-      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -a -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -a -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     else
       echo "EXT3 ou EXT4 pour boot"
-      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     fi
     mount -o remount,rw ${BOOT}
     sync
