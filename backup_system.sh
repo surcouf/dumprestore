@@ -64,7 +64,7 @@ clean_exit() {
   chown ftpperf:ftpusers /var/log/backup*out
   chmod 644 /var/log/backup*out
   cp /var/log/backup*out ${NFS_DESTDIR} 2>/dev/null
-  echo -e "\033[40;1;32m=== DEMONTAGE DU PARTAGE NFS ===\033[0m\n"
+  inform "== DEMONTAGE DU PARTAGE NFS ==="; echo
   umount -f /mnt/nfsbackup 2>/dev/null
   exit ${RETURN}
 }
@@ -124,12 +124,12 @@ fi
     export CORE=32
   fi
 
-  echo -e "\033[40;1;32m=== SAUVEGARDE SYSTEME rh${RHEL_VERSION} ===\033[0m"
+  inform "=== SAUVEGARDE SYSTEME rh${RHEL_VERSION} ==="
 
   echo -e "\033[43;6;30m=== Log de l'execution du script ${DIRLOG}/${LOGFILE} ===\033[0m"
   echo "=> Debut ${DATE}"
 
-  echo -e "\033[40;1;32m=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ===\033[0m"
+  inform "=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ==="
   lvscan | grep snap | egrep 'slash|usr|opt|var|seos|home'
   if [[ $? -eq 0 ]]; then
     case ${RHEL_VERSION} in
@@ -143,7 +143,7 @@ fi
      echo "=> Aucun snapshot systeme detecte"
   fi
 
-  echo -e "\033[40;1;32m=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ===\033[0m"
+  inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
   lvscan | grep -q backupLV
   if [[ $? -eq 0 ]]; then
     case ${RHEL_VERSION} in
@@ -157,7 +157,7 @@ fi
     echo "=> backupLV n'existe pas"
   fi
 
-  echo -e "\033[40;1;32m=== MONTAGE DU PARTAGE NFS POUR DEPOT DE LA SAUVEGARDE ===\033[0m"
+  inform "=== MONTAGE DU PARTAGE NFS POUR DEPOT DE LA SAUVEGARDE ==="
 
   if [[ -d "/mnt/nfsbackup" ]]; then
     echo "=> Le repertoire /mnt/nfsbackup existe "
@@ -219,7 +219,7 @@ fi
 
   sync
 
-  echo -e "\033[40;1;32m=> Sauvegarde de la partition /boot sous isis:${NFS_DESTDIR}/boot.fsa\033[0m"
+  inform "=> Sauvegarde de la partition /boot sous isis:${NFS_DESTDIR}/boot.fsa"
   mount | grep -q boot
   if [[ $? -eq 0 ]]; then
     echo "Pas de partition /boot separe"
@@ -239,7 +239,7 @@ fi
     sync
   fi
 
-  echo -e "\033[40;1;32m=== CREATION DES SNAPSHOTS DES LV SYSTEME ===\033[0m"
+  inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
   for lv in $(cat lvm.out); do
     lvcreate -L1G -s -n `echo ${lv} | cut -d/ -f 4`snap `echo ${lv}`
     if [[ $? -ne 0 ]]; then
@@ -248,9 +248,9 @@ fi
     fi
   done
 
-  echo -e "\033[40;1;32m=== SAUVEGARDE DES SNAPSHOTS ===\033[0m\n"
+  inform "=== SAUVEGARDE DES SNAPSHOTS ==="
   for lv in $(cat lvm.out); do
-    echo -e "\033[40;1;32m=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa \033[0m"
+    inform "=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa"
     /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} `echo ${lv} | cut -d/ -f 4`.fsa `echo ${lv}`snap
     if [[ $? -ne 0 ]]; then
       echo "Erreur : fsarchiver "`echo ${lv}`snap
@@ -260,7 +260,7 @@ fi
     sleep 2
   done
 
-  echo -e "\033[40;1;32m=== SUPPRESSION DES SNAPSHOTS ===\033[0m"
+  inform "=== SUPPRESSION DES SNAPSHOTS ==="
   lvremove -f /dev/*/{slash,usr,opt,var,seos,home}*snap
 
   sync
@@ -275,7 +275,7 @@ fi
     echo "=> Fichier kickstart deja recupere lors d'une precedente sauvegarde"
   fi
 
-  echo -e "\033[40;1;32m=== SAUVEGARDE DU MBR ET DE LA TABLE DES PARTITIONS ===\033[0m\n"
+  inform "=== SAUVEGARDE DU MBR ET DE LA TABLE DES PARTITIONS ==="
   BOOT_PART=$(cat /proc/partitions |awk '{print $4}' |grep -v "name"|grep -v "loop0" | grep -v '^$' | sed -n 1p)
   echo ${BOOT_PART}
   dd if=/dev/${BOOT_PART} of=${NFS_DESTDIR}/${HOST}.mbr.backup bs=512 count=1
@@ -283,17 +283,17 @@ fi
 
   cd /
   SIZE=$(du -sh ${NFS_DESTDIR} | cut -f 1)
-  echo -e "\033[40;1;32m=== TAILLE DE LA SAUVEGARDE = $SIZE \033[0m"
+  inform "=== TAILLE DE LA SAUVEGARDE = ${SIZE}"
   ls -lh ${NFS_DESTDIR}/*
 
   END=$(date +%s)
   DIFF=$(( ${END} - ${START} ))
-  echo -e "\033[40;1;32m=== DUREE DE LA SAUVEGARDE = $((${DIFF}/60/60)) heure $((${DIFF}/60%60 )) min $((${DIFF}%60)) sec \033[0m"
+  inform "=== DUREE DE LA SAUVEGARDE = $((${DIFF}/60/60)) heure $((${DIFF}/60%60 )) min $((${DIFF}%60)) sec"
 
   DATE=`date +%Y_%m_%d-%H:%M`
   echo "=> Fin ${DATE}"
 
-  echo -e "\033[40;1;32m=== CREATION DE backupLV POUR RESERVATION DES 6G NECESSAIRES AUX SNAPSHOTS ===\033[0m"
+  inform "=== CREATION DE backupLV POUR RESERVATION DES 6G NECESSAIRES AUX SNAPSHOTS ==="
 
   case "${RHEL_VERSION}" in
     5) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d/ -f3) ;;
