@@ -286,7 +286,7 @@ fi
   fi
 
   inform "=== SAUVEGARDE DU MBR ET DE LA TABLE DES PARTITIONS ==="
-  BOOT_PART=$(cat /proc/partitions |awk '{print $4}' |grep -v "name"|grep -v "loop0" | grep -v '^$' | sed -n 1p)
+  BOOT_PART=$(awk '{print $4}' /proc/partitions |egrep -v '(name|loop0|^$)' | sed -n 1p)
   echo ${BOOT_PART}
   dd if=/dev/${BOOT_PART} of=${NFS_DESTDIR}/${HOST}.mbr.backup bs=512 count=1
   sfdisk -d /dev/${BOOT_PART} > ${NFS_DESTDIR}/${HOST}.partitions-table.backup
