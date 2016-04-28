@@ -247,19 +247,23 @@ fi
 
   inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
   for lv in $(cat ${NFS_DESTDIR}/lvm.out); do
-    lvcreate -L1G -s -n `echo ${lv} | cut -d/ -f 4`snap `echo ${lv}`
+    local lvsnap="${lvname}snap"
+    local lvname=${lv##/*}
+    lvcreate -L1G -s -n ${lvsnap} ${lv}
     if [[ $? -ne 0 ]]; then
-      echo "Erreur : Creation du snapshot "`echo ${lv} | cut -d/ -f 4`snap `echo ${lv}`
+      echo "Erreur : Creation du snapshot ${lvsnap} ${lv}"
       clean_exit
     fi
   done
 
   inform "=== SAUVEGARDE DES SNAPSHOTS ==="
   for lv in $(cat ${NFS_DESTDIR}/lvm.out); do
-    inform "=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa"
-    /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa `echo ${lv}`snap
+    local lvsnap="${lv}snap"
+    local lvname=${lv##/*}
+    inform "=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/${lvname}.fsa"
+    /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/${lvname}.fsa ${lvsnap}
     if [[ $? -ne 0 ]]; then
-      echo "Erreur : fsarchiver "`echo ${lv}`snap
+      echo "Erreur : fsarchiver ${lvsnap}"
       clean_exit
     fi
     echo "----------------------------------------------"
