@@ -215,11 +215,9 @@ fi
     esac
   fi
 
-  cd ${NFS_DESTDIR}
-
   case ${RHEL_VERSION} in
-    5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
-    6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > lvm.out ;;
+    5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${NFS_DESTDIR}/lvm.out ;;
+    6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${NFS_DESTDIR}/lvm.out ;;
     *)
       echo "Erreur : OS Inconnu"
       clean_exit ;;
@@ -238,17 +236,17 @@ fi
     grep -q "boot ext2" /etc/mtab
     if [[ $? -eq 0 ]]; then
       echo "=> filesystem EXT2 pour boot, ajout argument -a"
-      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -a -z7 -j${CORE} BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -a -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     else
       echo "EXT3 ou EXT4 pour boot"
-      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     fi
     mount -o remount,rw ${BOOT}
     sync
   fi
 
   inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
-  for lv in $(cat lvm.out); do
+  for lv in $(cat ${NFS_DESTDIR}/lvm.out); do
     lvcreate -L1G -s -n `echo ${lv} | cut -d/ -f 4`snap `echo ${lv}`
     if [[ $? -ne 0 ]]; then
       echo "Erreur : Creation du snapshot "`echo ${lv} | cut -d/ -f 4`snap `echo ${lv}`
@@ -257,9 +255,9 @@ fi
   done
 
   inform "=== SAUVEGARDE DES SNAPSHOTS ==="
-  for lv in $(cat lvm.out); do
+  for lv in $(cat ${NFS_DESTDIR}/lvm.out); do
     inform "=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa"
-    /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} `echo ${lv} | cut -d/ -f 4`.fsa `echo ${lv}`snap
+    /usr/bin/time -f "\n%E elapsed" fsarchiver savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/`echo ${lv} | cut -d/ -f 4`.fsa `echo ${lv}`snap
     if [[ $? -ne 0 ]]; then
       echo "Erreur : fsarchiver "`echo ${lv}`snap
       clean_exit
