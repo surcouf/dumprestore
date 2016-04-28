@@ -214,6 +214,7 @@ fi
       ;;
     esac
   fi
+  FSARCHIVER_OPTS="-o -z7 -j${CORE}"
 
   case ${RHEL_VERSION} in
     5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${NFS_DESTDIR}/lvm.out ;;
@@ -236,10 +237,10 @@ fi
     grep -q "boot ext2" /etc/mtab
     if [[ $? -eq 0 ]]; then
       echo "=> filesystem EXT2 pour boot, ajout argument -a"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -a -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -a ${FSARCHIVER_OPTS} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     else
       echo "EXT3 ou EXT4 pour boot"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
+      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${NFS_DESTDIR}/BOOT.fsa ${BOOT}
     fi
     mount -o remount,rw ${BOOT}
     sync
@@ -261,7 +262,7 @@ fi
     local lvsnap="${lv}snap"
     local lvname=${lv##/*}
     inform "=> ${lv} sauvegarde sous isis:${NFS_DESTDIR}/${lvname}.fsa"
-    /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -o -z7 -j${CORE} ${NFS_DESTDIR}/${lvname}.fsa ${lvsnap}
+    /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${NFS_DESTDIR}/${lvname}.fsa ${lvsnap}
     if [[ $? -ne 0 ]]; then
       echo "Erreur : fsarchiver ${lvsnap}"
       clean_exit
