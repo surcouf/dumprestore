@@ -8,9 +8,9 @@
 #   Frederic DIENOT <Frederic.Dienot.external@banque-france.fr>
 #   Raphael BORDET <Raphael.Bordet.external@banque-france.fr>
 #
-# MAJ : 02/03/2015
+# MAJ : 29/04/2016
 #
-# Utilisation de FSARCHIVER
+# Utilisation de dump
 # Script uniquement modifiable avec l'accord de INFRA UNIX
 # OS : RHEL5 / RHEL6
 ###########################################################
@@ -115,6 +115,23 @@ case "${RHEL_VERSION}" in
   ;;
 esac
 
+DUMP=$(which dump)
+if [[ $? -eq 1 ]]; then
+  yum -q -y install dump
+  DUMP=$(which dump)
+fi
+
+DUMP_OPTS="-u -j9"
+
+DUMPLEVEL=0
+DUMP_OPTS="${DUMP_OPTS} -${DUMPLEVEL}"
+
+# snmpd is looking for /etc/dumpdates
+#DUMPDATES="/etc/dumpdates"
+if [[ -n "${DUMPDATES}" ]]; then
+  DUMP_OPTS="${DUMP_OPTS} -D ${DUMPDATES}"
+fi
+
 # Releve de la config Hardware du serveur physique
 if [ -x /root/hardware.sh -a -x /sbin/hpasmcli -a -x /sbin/hplog -a -x /opt/compaq/hpacucli/bld/hpacucli ]; then
   /root/hardware.sh show
@@ -125,13 +142,6 @@ fi
 {
   exec 2>&1
   START=$(date +%s)
-  CORE=$(grep -c 'processor' /proc/cpuinfo)
-  export CORE
-
-  # fsarchiver ne supporte que jusqu'a 32 jobs simulatnes. On limite donc CORE a 32.
-  if [[ ${CORE} -gt 32 ]]; then
-    export CORE=32
-  fi
 
   inform "=== SAUVEGARDE SYSTEME rh${RHEL_VERSION} ==="
 
@@ -200,23 +210,6 @@ fi
     clean_exit
   fi
 
-  FSARCHIVER=$(which fsarchiver)
-  if [[ $? -eq 1 ]]; then
-    case ${RHEL_VERSION} in
-      5)
-          echo "=> fsarchiver introuvable, recuperation du binaire"
-          cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
-          FSARCHIVER="/usr/local/sbin/fsarchiver"
-          chmod ug+x ${FSARCHIVER}
-      ;;
-      6)
-          yum -q -y install fsarchiver
-          FSARCHIVER=$(which fsarchiver)
-      ;;
-    esac
-  fi
-  FSARCHIVER_OPTS="-o -z7 -j${CORE}"
-
   case ${RHEL_VERSION} in
     5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
     6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
@@ -235,14 +228,7 @@ fi
     BOOT=$(mount | grep boot | awk '{print $1}')
     mount -o remount,ro ${BOOT}
     sync
-    grep -q "boot ext2" /etc/mtab
-    if [[ $? -eq 0 ]]; then
-      echo "=> filesystem EXT2 pour boot, ajout argument -a"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -a ${FSARCHIVER_OPTS} ${DESTDIR}/BOOT.fsa ${BOOT}
-    else
-      echo "EXT3 ou EXT4 pour boot"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${DESTDIR}/BOOT.fsa ${BOOT}
-    fi
+    ${DUMP} ${DUMP_OPTS} -L boot -f ${DESTDIR}/BOOT.dump${DUMPLEVEL} ${BOOT}
     mount -o remount,rw ${BOOT}
     sync
   fi
@@ -263,11 +249,13 @@ fi
     local lvsnap="${lv}snap"
     local lvname=${lv##/*}
     inform "=> ${lv} sauvegarde sous isis:${DESTDIR}/${lvname}.fsa"
-    /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${DESTDIR}/${lvname}.fsa ${lvsnap}
+    ${DUMP} ${DUMP_OPTS} -L ${lvname} -f ${DESTDIR}/${lvname}.dump.${DUMPLEVEL} ${lvsnap}
     if [[ $? -ne 0 ]]; then
-      echo "Erreur : fsarchiver ${lvsnap}"
+      echo "Erreur : dump ${lvsnap}"
       clean_exit
     fi
+    # Mise a jour de dumpdates avec le nom original du LV sauvegarde au lieu du snapshot.
+    sed -i -e "s/${lvsnap}/${lv}/" ${DUMPDATES}
     echo "----------------------------------------------"
     sleep 2
   done
