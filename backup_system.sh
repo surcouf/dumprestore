@@ -277,14 +277,16 @@ fi
 
   sync
 
-  if [ ! -s ks-${HOST}.cfg -a -s /root/*ks.cfg ]; then
-    echo "=> Recuperation du kickstart "
-    cp /root/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
-  elif [ ! -s ks-${HOST}.cfg -a -s /root/log_install/*ks.cfg ]; then
-    echo "=> Recuperation du kickstart "
-    cp /root/log_install/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
-  else
+  if [[ -s ${DESTDIR}/ks-${HOST}.cfg ]];then
     echo "=> Fichier kickstart deja recupere lors d'une precedente sauvegarde"
+  else
+    if [[ -s /root/*ks.cfg ]]; then
+      echo "=> Recuperation du kickstart "
+      cp /root/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
+    elif [[ -s /root/log_install/*ks.cfg ]]; then
+      echo "=> Recuperation du kickstart "
+      cp /root/log_install/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
+    fi
   fi
 
   inform "=== SAUVEGARDE DU MBR ET DE LA TABLE DES PARTITIONS ==="
