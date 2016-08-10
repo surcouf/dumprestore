@@ -107,7 +107,7 @@ DESTDIR="${NFS_DIR}/${HOST}"
 export NFS_DIR DESTDIR
 
 RHEL_VERSION=$(lsb_release -sr)
-case "${RHEL_VERSION}" in
+case "${RHEL_VERSION%.*}" in
   5|6) ;;
   *)
     echo "Erreur : OS non supporte !"
@@ -141,7 +141,7 @@ fi
   inform "=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ==="
   lvscan | grep snap | egrep 'slash|usr|opt|var|seos|home'
   if [[ $? -eq 0 ]]; then
-    case ${RHEL_VERSION} in
+    case "${RHEL_VERSION%.*}" in
       5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/{slash,usr,opt,var,seos,home}*snap ;;
       6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)-{slash,usr,opt,var,seos,home}*snap ;;
       *)
@@ -155,7 +155,7 @@ fi
   inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
   lvscan | grep -q backupLV
   if [[ $? -eq 0 ]]; then
-    case ${RHEL_VERSION} in
+    case "${RHEL_VERSION%.*}" in
       5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/backupLV ;;
       6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)/backupLV ;;
       *)
@@ -202,7 +202,7 @@ fi
 
   FSARCHIVER=$(which fsarchiver)
   if [[ $? -eq 1 ]]; then
-    case ${RHEL_VERSION} in
+    case "${RHEL_VERSION%.*}" in
       5)
           echo "=> fsarchiver introuvable, recuperation du binaire"
           cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
@@ -217,7 +217,7 @@ fi
   fi
   FSARCHIVER_OPTS="-o -z7 -j${CORE}"
 
-  case ${RHEL_VERSION} in
+  case "${RHEL_VERSION%.*}" in
     5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
     6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
     *)
@@ -309,7 +309,7 @@ fi
 
   inform "=== CREATION DE backupLV POUR RESERVATION DES 6G NECESSAIRES AUX SNAPSHOTS ==="
 
-  case "${RHEL_VERSION}" in
+  case "${RHEL_VERSION%.*}" in
     5) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d/ -f3) ;;
     6) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d- -f1) ;;
     *)
