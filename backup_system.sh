@@ -314,21 +314,23 @@ fi
   done
 
   inform "=== SAUVEGARDE DES SNAPSHOTS ==="
-  for lv in $(cat ${DESTDIR}/lvm.out); do
-    local lvsnap="${lv}snap"
-    local lvname=${lv##/*}
-    inform "=> ${lv} sauvegarde sous isis:${DESTDIR}/${lvname}.fsa"
-    /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${DESTDIR}/${lvname}.fsa ${lvsnap}
-    if [[ $? -ne 0 ]]; then
-      echo "Erreur : fsarchiver ${lvsnap}"
-      clean_exit
-    fi
-    echo "----------------------------------------------"
-    sleep 2
+  unset -v LVS
+  LVS=( $(lvs --noheading -o lv_path systemVG) )
+  for lv in ${LVS[*]}; do
+    lvattr=$(lvs --noheadings -o lv_attr ${lv})
+    case "${lvattr:2:1}" in
+      # 1 Volume type: (m)irrored, (M)irrored without initial sync, (o)rigin, (O)rigin with merging snapshot, (s)napshot, merging (S)napshot, (p)vmove, (v)irtual, mirror (i)mage,
+      # mirror (I)mage out-of-sync, under (c)onversion
+      s)
+        file="${lv##*/}.fsa"
+        dump_fs ${lv} ${NFSDIR}/${file}
+        echo "----------------------------------------------"
+        sleep 2
+        warning "=== SUPPRESSION DES SNAPSHOTS ==="
+        lvremove -f ${lv}
+      ;;
+    esac
   done
-
-  inform "=== SUPPRESSION DES SNAPSHOTS ==="
-  lvremove -f /dev/*/{slash,usr,opt,var,seos,home}*snap
 
   sync
 
