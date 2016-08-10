@@ -93,7 +93,7 @@ error() {
 # Pour sortir proprement
 clean_exit() {
   RETURN=${1:-3}
-  find /var/log -name "backup_*.out" -mtime +90 -exec rm {} \;
+  find /var/log -name "backup_*.out" -mtime +90 -delete
   chown ftpperf:ftpusers /var/log/backup*out
   chmod 644 /var/log/backup*out
   cp /var/log/backup*out ${DESTDIR} 2>/dev/null
