@@ -100,27 +100,27 @@ clean_exit() {
 }
 
 dump_fs() {
-    local DEV=$1
-    local FILE=$2
-    local FS=$(${BLKID} ${DEV})
+  local DEV=$1
+  local FILE=$2
+  local FS=$(${BLKID} ${DEV})
 
-    local DUMP="fsarchiver savefs"
-    local DUMP_OPTS="-o -z7 -j${CORE}"
+  local DUMP="fsarchiver savefs"
+  local DUMP_OPTS="-o -z7 -j${CORE}"
 
-    case "${FS}" in
-        ext2)
-            DUMP_OPTS="-a ${DUMP_OPTS}"
-        ;;
-        xfs)  ;; #TODO
-    esac
+  case "${FS}" in
+    ext2)
+      DUMP_OPTS="-a ${DUMP_OPTS}"
+      ;;
+    xfs)  ;; #TODO
+  esac
 
-    inform "=> Sauvegarde de ${DEV} sous isis:${NFSDIR}/${file}"
-    /usr/bin/time -f "\n%E elapsed" ${DUMP} ${DUMP_OPTS} ${FILE} ${DEV}
-    if [[ $? -ne 0 ]]; then
-        error "Erreur : fsarchiver ${snap}"
-        clean_exit
-    fi
-    return $?
+  inform "=> Sauvegarde de ${DEV} sous isis:${NFSDIR}/${file}"
+  /usr/bin/time -f "\n%E elapsed" ${DUMP} ${DUMP_OPTS} ${FILE} ${DEV}
+  if [[ $? -ne 0 ]]; then
+    error "Erreur : fsarchiver ${snap}"
+    clean_exit
+  fi
+  return $?
 }
 
 # Main 
@@ -140,7 +140,7 @@ case "${RHEL_VERSION%.*}" in
   *)
     echo "Erreur : OS non supporte !"
     clean_exit
-  ;;
+    ;;
 esac
 
 case "${HOST:2:2}" in
@@ -166,7 +166,7 @@ fi
 
   inform "=== SAUVEGARDE SYSTEME RHEL ${RHEL_VERSION} ==="
 
-  echo -e "\033[43;6;30m=== Log de l'execution du script ${DIRLOG}/${LOGFILE} ===\033[0m"
+  warning "=== Log de l'execution du script ${DIRLOG}/${LOGFILE} ==="
   echo "=> Debut ${DATE}"
 
   inform "=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ==="
@@ -177,10 +177,10 @@ fi
       6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)-{slash,usr,opt,var,seos,home}*snap ;;
       *)
         echo "Erreur : OS Inconnu"
-        clean_exit ;;
-     esac
+        clean_exit;;
+    esac
   else
-     echo "=> Aucun snapshot systeme detecte"
+    echo "=> Aucun snapshot systeme detecte"
   fi
 
   inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
@@ -235,14 +235,14 @@ fi
   if [[ $? -eq 1 ]]; then
     case "${RHEL_VERSION%.*}" in
       5)
-          echo "=> fsarchiver introuvable, recuperation du binaire"
-          cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
-          FSARCHIVER="/usr/local/sbin/fsarchiver"
-          chmod ug+x ${FSARCHIVER}
+        echo "=> fsarchiver introuvable, recuperation du binaire"
+        cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
+        FSARCHIVER="/usr/local/sbin/fsarchiver"
+        chmod ug+x ${FSARCHIVER}
       ;;
       6)
-          yum -q -y install fsarchiver
-          FSARCHIVER=$(which fsarchiver)
+        yum -q -y install fsarchiver
+        FSARCHIVER=$(which fsarchiver)
       ;;
     esac
   fi
