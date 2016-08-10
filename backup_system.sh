@@ -110,19 +110,19 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
-case ${HOST:2:2} in
-  dv|re) NFS=development;;
-  in)    NFS=integration;;
-  pr|ho) NFS=production;;
-  *)     NFS=test;;
-esac
-
 case "${RHEL_VERSION%.*}" in
   5|6) ;;
   *)
     echo "Erreur : OS non supporte !"
     clean_exit
   ;;
+esac
+
+case "${HOST:2:2}" in
+  dv|re) ENV=development;;
+  in)    ENV=integration;;
+  pr|ho) ENV=production;;
+  *)     ENV=test;;
 esac
 
 # Releve de la config Hardware du serveur physique
