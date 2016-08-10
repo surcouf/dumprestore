@@ -29,15 +29,15 @@ DIRLOG=/var/log
 LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
 
 NFS_SERVER="r-isis.unix.intra.bdf.local"
-NFS_DIR="/mnt/nfsbackup"
-DESTDIR="${NFS_DIR}/${HOST}"
+MNTDIR="/mnt/nfsbackup"
+DESTDIR="${MNTDIR}/${HOST}"
 
 RHEL_VERSION=$(lsb_release -sr)
 CORE=$(grep -c 'processor' /proc/cpuinfo)
 
 BLKID="blkid -s TYPE -o value"
 
-export PATH LOGFILE NFS_DIR DESTDIR CORE
+export PATH LOGFILE MNTDIR DESTDIR CORE
 
 # Functions
 
@@ -96,7 +96,7 @@ clean_exit() {
   chmod 644 /var/log/backup*out
   cp /var/log/backup*out ${DESTDIR} 2>/dev/null
   inform "== DEMONTAGE DU PARTAGE NFS ==="; echo
-  umount -f ${NFS_DIR} 2>/dev/null
+  umount -f ${MNTDIR} 2>/dev/null
   exit ${RETURN}
 }
 
@@ -196,11 +196,11 @@ fi
 
   inform "=== MONTAGE DU PARTAGE NFS POUR DEPOT DE LA SAUVEGARDE ==="
 
-  if [[ -d "${NFS_DIR}" ]]; then
-    echo "=> Le repertoire ${NFS_DIR} existe "
+  if [[ -d "${MNTDIR}" ]]; then
+    echo "=> Le repertoire ${MNTDIR} existe "
   else
-    echo "=> Creation du repertoire ${NFS_DIR}"
-    mkdir -p ${NFS_DIR}
+    echo "=> Creation du repertoire ${MNTDIR}"
+    mkdir -p ${MNTDIR}
   fi
 
   grep -q "nfsbackup nfs" /etc/mtab
@@ -208,7 +208,7 @@ fi
     echo "=> Partage NFS deja monte"
   else
     echo "=> Montage du partage NFS"
-    mount -t nfs4 ${NFS_SERVER}:/home/svsys/appli/bdf/nfsbackup ${NFS_DIR}
+    mount -t nfs4 ${NFS_SERVER}:/home/svsys/appli/bdf/nfsbackup ${MNTDIR}
     if [[ $? -ne 0 ]]; then
       echo "Erreur : Montage NFS"
       clean_exit
@@ -222,7 +222,7 @@ fi
     mkdir ${DESTDIR}
   fi
 
-  NFS_FREE=$(df -Pk ${NFS_DIR} | tail -1 | awk '{print $4}')
+  NFS_FREE=$(df -Pk ${MNTDIR} | tail -1 | awk '{print $4}')
   if [[ ${NFS_FREE} -lt 10485760 ]]; then
     echo "Erreur : Place libre insuffisante sur le partage NFS"
     clean_exit
@@ -233,7 +233,7 @@ fi
     case "${RHEL_VERSION%.*}" in
       5)
         echo "=> fsarchiver introuvable, recuperation du binaire"
-        cp ${NFS_DIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
+        cp ${MNTDIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
         FSARCHIVER="/usr/local/sbin/fsarchiver"
         chmod ug+x ${FSARCHIVER}
       ;;
