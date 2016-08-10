@@ -365,14 +365,7 @@ fi
   echo "=> Fin ${DATE}"
 
   inform "=== CREATION DE backupLV POUR RESERVATION DES 6G NECESSAIRES AUX SNAPSHOTS ==="
-
-  case "${RHEL_VERSION%.*}" in
-    5) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d/ -f3) ;;
-    6) lvcreate -L6144M -n backupLV $(grep usr /proc/mounts | head -n1 | cut -d- -f1) ;;
-    *)
-      echo "Erreur : OS Inconnu"
-      clean_exit ;;
-  esac
+  lvcreate -L6144M -n backupLV systemVG
 
 } | tee ${DIRLOG}/${LOGFILE}
 
