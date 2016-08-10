@@ -257,24 +257,16 @@ fi
 
   sync
 
-  inform "=> Sauvegarde de la partition /boot sous isis:${DESTDIR}/boot.fsa"
-  mount | grep -q boot
-  if [[ $? -eq 0 ]]; then
-    echo "Pas de partition /boot separe"
+  BOOT=$(mount | grep boot)
+  if [[ $? -ne 0 ]]; then
+      echo "Pas de partition /boot separe"
   else
-    BOOT=$(mount | grep boot | awk '{print $1}')
-    mount -o remount,ro ${BOOT}
-    sync
-    grep -q "boot ext2" /etc/mtab
-    if [[ $? -eq 0 ]]; then
-      echo "=> filesystem EXT2 pour boot, ajout argument -a"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs -a ${FSARCHIVER_OPTS} ${DESTDIR}/BOOT.fsa ${BOOT}
-    else
-      echo "EXT3 ou EXT4 pour boot"
-      /usr/bin/time -f "\n%E elapsed" ${FSARCHIVER} savefs ${FSARCHIVER_OPTS} ${DESTDIR}/BOOT.fsa ${BOOT}
-    fi
-    mount -o remount,rw ${BOOT}
-    sync
+      BOOT="${BOOT%% *}"
+      mount -o remount,ro ${BOOT}
+      sync
+      dump_fs ${BOOT} ${NFSDIR}/BOOT.fsa
+      mount -o remount,rw ${BOOT}
+      sync
   fi
 
   inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
@@ -310,10 +302,10 @@ fi
   if [[ -s ${DESTDIR}/ks-${HOST}.cfg ]];then
     echo "=> Fichier kickstart deja recupere lors d'une precedente sauvegarde"
   else
-    if [[ -s /root/*ks.cfg ]]; then
+    if [[ -s /root/anaconda-ks.cfg ]]; then
       echo "=> Recuperation du kickstart "
       cp /root/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
-    elif [[ -s /root/log_install/*ks.cfg ]]; then
+    elif [[ -s /root/log_install/anaconda-ks.cfg ]]; then
       echo "=> Recuperation du kickstart "
       cp /root/log_install/anaconda-ks.cfg ${DESTDIR}/ks-${HOST}.cfg
     fi
