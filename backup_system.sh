@@ -230,31 +230,6 @@ fi
     clean_exit
   fi
 
-  FSARCHIVER=$(which fsarchiver)
-  if [[ $? -eq 1 ]]; then
-    case "${RHEL_VERSION%.*}" in
-      5)
-        echo "=> fsarchiver introuvable, recuperation du binaire"
-        cp ${MNTDIR}/fsarchiver-el5/fsarchiver /usr/local/sbin/
-        FSARCHIVER="/usr/local/sbin/fsarchiver"
-        chmod ug+x ${FSARCHIVER}
-      ;;
-      6)
-        yum -q -y install fsarchiver
-        FSARCHIVER=$(which fsarchiver)
-      ;;
-    esac
-  fi
-  FSARCHIVER_OPTS="-o -z7 -j${CORE}"
-
-  case "${RHEL_VERSION%.*}" in
-    5) lvdisplay | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
-    6) lvdisplay | grep -i "LV Path" | egrep -i 'slashlv|usrlv|optlv|varlv|seoslv|homelv' | awk '{ print $3 }' | sort > ${DESTDIR}/lvm.out ;;
-    *)
-      echo "Erreur : OS Inconnu"
-      clean_exit ;;
-  esac
-
   sync
 
   BOOT=$(mount | grep boot)
@@ -334,7 +309,7 @@ fi
 
   sync
 
-  if [[ -s ${DESTDIR}/ks-${HOST}.cfg ]];then
+  if [[ -s "${DESTDIR}/ks-${HOST}.cfg" ]];then
     echo "=> Fichier kickstart deja recupere lors d'une precedente sauvegarde"
   else
     if [[ -s /root/anaconda-ks.cfg ]]; then
@@ -352,7 +327,6 @@ fi
   dd if=/dev/${BOOT_PART} of=${DESTDIR}/${HOST}.mbr.backup bs=512 count=1
   sfdisk -d /dev/${BOOT_PART} > ${DESTDIR}/${HOST}.partitions-table.backup
 
-  cd /
   SIZE=$(du -sh ${DESTDIR} | cut -f 1)
   inform "=== TAILLE DE LA SAUVEGARDE = ${SIZE}"
   ls -lh ${DESTDIR}/*
