@@ -15,8 +15,28 @@
 # OS : RHEL5 / RHEL6
 ###########################################################
 
-# Pour des raisons de securite
-umask 0077
+# Variables
+
+VERSION=2.00
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/seos/bin:/root/bin
+
+HOST=$(hostname -s)
+
+DATE=$(date +%Y_%m_%d-%H:%M)
+
+DIRLOG=/var/log
+LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
+
+NFS_DIR="/mnt/nfsbackup"
+DESTDIR="${NFS_DIR}/${HOST}"
+
+RHEL_VERSION=$(lsb_release -sr)
+CORE=$(grep -c 'processor' /proc/cpuinfo)
+
+export PATH LOGFILE NFS_DIR DESTDIR CORE
+
+# Functions
 
 print_msg() {
   #
@@ -77,10 +97,12 @@ clean_exit() {
   exit ${RETURN}
 }
 
+# Main 
+
+umask 0077
+
 trap clean_exit SIGHUP SIGINT SIGTERM
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/seos/bin:/root/bin
-export PATH
 
 # Verif root
 if [[ ${EUID} -ne 0 ]]; then
@@ -88,7 +110,6 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
-HOST=$(hostname -s)
 case ${HOST:2:2} in
   dv|re) NFS=development;;
   in)    NFS=integration;;
@@ -96,17 +117,6 @@ case ${HOST:2:2} in
   *)     NFS=test;;
 esac
 
-DATE=$(date +%Y_%m_%d-%H:%M)
-DIRLOG=/var/log
-export DIRLOG
-LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
-export LOGFILE
-
-NFS_DIR="/mnt/nfsbackup"
-DESTDIR="${NFS_DIR}/${HOST}"
-export NFS_DIR DESTDIR
-
-RHEL_VERSION=$(lsb_release -sr)
 case "${RHEL_VERSION%.*}" in
   5|6) ;;
   *)
@@ -125,8 +135,6 @@ fi
 {
   exec 2>&1
   START=$(date +%s)
-  CORE=$(grep -c 'processor' /proc/cpuinfo)
-  export CORE
 
   # fsarchiver ne supporte que jusqu'a 32 jobs simulatnes. On limite donc CORE a 32.
   if [[ ${CORE} -gt 32 ]]; then
