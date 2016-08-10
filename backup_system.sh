@@ -34,6 +34,8 @@ DESTDIR="${NFS_DIR}/${HOST}"
 RHEL_VERSION=$(lsb_release -sr)
 CORE=$(grep -c 'processor' /proc/cpuinfo)
 
+BLKID="blkid -s TYPE -o value"
+
 export PATH LOGFILE NFS_DIR DESTDIR CORE
 
 # Functions
@@ -97,6 +99,30 @@ clean_exit() {
   exit ${RETURN}
 }
 
+dump_fs() {
+    local DEV=$1
+    local FILE=$2
+    local FS=$(${BLKID} ${DEV})
+
+    local DUMP="fsarchiver savefs"
+    local DUMP_OPTS="-o -z7 -j${CORE}"
+
+    case "${FS}" in
+        ext2)
+            DUMP_OPTS="-a ${DUMP_OPTS}"
+        ;;
+        xfs)  ;; #TODO
+    esac
+
+    inform "=> Sauvegarde de ${DEV} sous isis:${NFSDIR}/${file}"
+    /usr/bin/time -f "\n%E elapsed" ${DUMP} ${DUMP_OPTS} ${FILE} ${DEV}
+    if [[ $? -ne 0 ]]; then
+        error "Erreur : fsarchiver ${snap}"
+        clean_exit
+    fi
+    return $?
+}
+
 # Main 
 
 umask 0077
@@ -138,7 +164,7 @@ fi
     export CORE=32
   fi
 
-  inform "=== SAUVEGARDE SYSTEME rh${RHEL_VERSION} ==="
+  inform "=== SAUVEGARDE SYSTEME RHEL ${RHEL_VERSION} ==="
 
   echo -e "\033[43;6;30m=== Log de l'execution du script ${DIRLOG}/${LOGFILE} ===\033[0m"
   echo "=> Debut ${DATE}"
