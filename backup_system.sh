@@ -269,6 +269,16 @@ fi
       sync
   fi
 
+  # Sauvegarde de la configuration des volumes LVM
+  warning "=== SAUVEGARDE DE LA CONFIGURATION LVM de systemVG ==="
+  vgcfgbackup systemVG -f "${NFSDIR}/systemVG.cfg"
+  if [[ $? -eq 0 ]]; then
+      echo "Configuration LVM sauvegardée."
+  else
+      echo "Erreur lors de la copie de la configuration LVM"
+      clean_exit
+  fi
+
   inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
   for lv in $(cat ${DESTDIR}/lvm.out); do
     local lvsnap="${lvname}snap"
