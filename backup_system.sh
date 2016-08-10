@@ -280,14 +280,37 @@ fi
   fi
 
   inform "=== CREATION DES SNAPSHOTS DES LV SYSTEME ==="
-  for lv in $(cat ${DESTDIR}/lvm.out); do
-    local lvsnap="${lvname}snap"
-    local lvname=${lv##/*}
-    lvcreate -L1G -s -n ${lvsnap} ${lv}
-    if [[ $? -ne 0 ]]; then
-      echo "Erreur : Creation du snapshot ${lvsnap} ${lv}"
-      clean_exit
-    fi
+  unset -v LVS
+  LVS=( $(lvs --noheading -o lv_path systemVG) )
+  for lv in ${LVS[*]}; do
+    case "$(${BLKID} ${lv})" in
+      ext?)
+        lvattr=$(lvs --noheadings -o lv_attr ${lv})
+        case "${lvattr:2:1}" in
+          # 1 Volume type: (m)irrored, (M)irrored without initial sync, (o)rigin, (O)rigin with merging snapshot, (s)napshot, merging (S)napshot, (p)vmove, (v)irtual, mirror (i)mage,
+          # mirror (I)mage out-of-sync, under (c)onversion
+          -)
+            case "${lvattr:6:1}" in
+              # 5  State: (a)ctive, (s)uspended, (I)nvalid snapshot, invalid (S)uspended snapshot, mapped (d)evice present without tables, mapped device present with (i)nactive table
+              a)
+                case "${lvattr:7:1}" in
+                  # 6  device (o)pen
+                  o)
+                    snap="${lv}snap"
+                    lvcreate -L1G -s -n ${snap##*/} ${lv}
+                    if [[ $? -ne 0 ]]; then
+                      echo "Erreur : Creation du snapshot ${snap##*/} ${lv}"
+                      clean_exit
+                    fi
+                  ;;
+                esac
+              ;;
+            esac
+          ;;
+        esac
+      ;;
+      xfs)  ;; #TODO
+    esac
   done
 
   inform "=== SAUVEGARDE DES SNAPSHOTS ==="
