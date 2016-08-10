@@ -169,19 +169,15 @@ fi
   warning "=== Log de l'execution du script ${DIRLOG}/${LOGFILE} ==="
   echo "=> Debut ${DATE}"
 
+  LVS=( $(lvs --noheading -o lv_path systemVG) )
+
   inform "=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ==="
-  lvscan | grep snap | egrep 'slash|usr|opt|var|seos|home'
-  if [[ $? -eq 0 ]]; then
-    case "${RHEL_VERSION%.*}" in
-      5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/{slash,usr,opt,var,seos,home}*snap ;;
-      6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)-{slash,usr,opt,var,seos,home}*snap ;;
-      *)
-        echo "Erreur : OS Inconnu"
-        clean_exit;;
-    esac
-  else
-    echo "=> Aucun snapshot systeme detecte"
-  fi
+  for lv in ${LVS[*]}; do
+    snap="${lv}snap"
+    if [[ -e ${snap} ]]; then 
+      lvremove -f ${snap}
+    fi
+  done
 
   inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
   lvscan | grep -q backupLV
