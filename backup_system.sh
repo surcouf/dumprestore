@@ -187,18 +187,13 @@ fi
   done
 
   inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
-  lvscan | grep -q backupLV
-  if [[ $? -eq 0 ]]; then
-    case "${RHEL_VERSION%.*}" in
-      5) lvremove -f /dev/$(grep usr /proc/mounts | head -n1 | cut -d/ -f3)/backupLV ;;
-      6) lvremove -f $(grep usr /proc/mounts | head -n1 | cut -d- -f1)/backupLV ;;
-      *)
-        echo "Erreur : OS Inconnu"
-        clean_exit ;;
+  for lv in ${LVS[*]}; do
+    case "${lv##*/}" in
+      backupLV)
+        lvremove -f ${lv}
+      ;;
     esac
-  else
-    echo "=> backupLV n'existe pas"
-  fi
+  done
 
   inform "=== MONTAGE DU PARTAGE NFS POUR DEPOT DE LA SAUVEGARDE ==="
 
