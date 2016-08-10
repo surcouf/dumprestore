@@ -28,6 +28,7 @@ DATE=$(date +%Y_%m_%d-%H:%M)
 DIRLOG=/var/log
 LOGFILE=backup_${HOST}_$(date +\%Y_\%m_\%d).out
 
+NFS_SERVER="r-isis.unix.intra.bdf.local"
 NFS_DIR="/mnt/nfsbackup"
 DESTDIR="${NFS_DIR}/${HOST}"
 
@@ -207,7 +208,7 @@ fi
     echo "=> Partage NFS deja monte"
   else
     echo "=> Montage du partage NFS"
-    mount -t nfs4 r-isis.unix.intra.bdf.local:/home/svsys/appli/bdf/nfsbackup ${NFS_DIR}
+    mount -t nfs4 ${NFS_SERVER}:/home/svsys/appli/bdf/nfsbackup ${NFS_DIR}
     if [[ $? -ne 0 ]]; then
       echo "Erreur : Montage NFS"
       clean_exit
