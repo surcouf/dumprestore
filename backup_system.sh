@@ -176,10 +176,14 @@ fi
 
   inform "=== SUPPRESSION DE SNAPSHOT EVENTUELLEMENT EXISTANT ==="
   for lv in ${LVS[*]}; do
-    snap="${lv}snap"
-    if [[ -e ${snap} ]]; then 
-      lvremove -f ${snap}
-    fi
+    lvattr=$(lvs --noheadings -o lv_attr ${lv})
+    case "${lvattr:2:1}" in
+      # 1 Volume type: (m)irrored, (M)irrored without initial sync, (o)rigin, (O)rigin with merging snapshot, (s)napshot, merging (S)napshot, (p)vmove, (v)irtual, mirror (i)mage,
+      # mirror (I)mage out-of-sync, under (c)onversion
+      s)
+        lvremove -f ${lv}
+      ;;
+    esac
   done
 
   inform "=== SUPPRESSION de backupLV - liberation des 6G reserves pour les snapshots ==="
