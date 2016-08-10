@@ -103,7 +103,6 @@ umask 0077
 
 trap clean_exit SIGHUP SIGINT SIGTERM
 
-
 # Verif root
 if [[ ${EUID} -ne 0 ]]; then
   echo "Ce script doit etre lance en tant que root" 1>&2
@@ -125,10 +124,8 @@ case "${HOST:2:2}" in
   *)     ENV=test;;
 esac
 
-# Releve de la config Hardware du serveur physique
-if [ -x /root/hardware.sh -a -x /sbin/hpasmcli -a -x /sbin/hplog -a -x /opt/compaq/hpacucli/bld/hpacucli ]; then
-  /root/hardware.sh show
-elif [ -x /root/hardware.sh -a -x /opt/dell/srvadmin/bin/omreport ]; then
+# Hardware configuration report 
+if [[ -x /root/hardware.sh ]]; then
   /root/hardware.sh show
 fi
 
