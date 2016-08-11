@@ -107,22 +107,35 @@ dump_fs() {
   local FILE=$2
   local FS=$(${BLKID} ${DEV})
 
-  local DUMP="fsarchiver savefs"
-  local DUMP_OPTS="-o -z7 -j${CORE}"
-
-  case "${FS}" in
-    ext2)
-      DUMP_OPTS="-a ${DUMP_OPTS}"
-      ;;
-    xfs)  ;; #TODO
-  esac
+  local DUMP
+  local DUMP_OPTS
+  local DUMPLEVEL=0
 
   inform "=> Sauvegarde de ${DEV} sous isis:${NFSDIR}/${file}"
-  /usr/bin/time -f "\n%E elapsed" ${DUMP} ${DUMP_OPTS} ${FILE} ${DEV}
+
+  DUMP="$(which fsarchiver)"
+  if [[ $? -eq 0 ]]; then
+    DUMP_OPTS="savefs -o -z7 -j${CORE}"
+    case "${FS}" in
+      ext2)
+        DUMP_OPTS="${DUMP_OPTS} -a"
+        ;;
+      xfs)  ;; #TODO
+    esac
+    EXT="fsa"
+  else
+    # Dump
+    DUMP="dump"
+    DUMP_OPTS="-u -j9 -${DUMPLEVEL}"
+    EXT="dump.${DUMPLEVEL}"
+  fi
+
+  /usr/bin/time -f "\n%E elapsed" ${DUMP} ${DUMP_OPTS} ${FILE}.${EXT} ${DEV}
   if [[ $? -ne 0 ]]; then
-    error "Erreur : fsarchiver ${snap}"
+    error "Erreur : ${DUMP} ${DEV}"
     clean_exit
   fi
+
   return $?
 }
 
@@ -238,7 +251,7 @@ fi
       BOOT="${BOOT%% *}"
       mount -o remount,ro ${BOOT}
       sync
-      dump_fs ${BOOT} ${NFSDIR}/BOOT.fsa
+      dump_fs ${BOOT} ${NFSDIR}/BOOT
       mount -o remount,rw ${BOOT}
       sync
   fi
@@ -296,7 +309,7 @@ fi
       # 1 Volume type: (m)irrored, (M)irrored without initial sync, (o)rigin, (O)rigin with merging snapshot, (s)napshot, merging (S)napshot, (p)vmove, (v)irtual, mirror (i)mage,
       # mirror (I)mage out-of-sync, under (c)onversion
       s)
-        file="${lv##*/}.fsa"
+        file="${lv##*/}"
         dump_fs ${lv} ${NFSDIR}/${file}
         echo "----------------------------------------------"
         sleep 2
